@@ -206,6 +206,14 @@ button:disabled {
     box-shadow: 0 8px 20px rgba(56, 161, 105, 0.3);
 }
 
+#clear-session-btn {
+    background: linear-gradient(145deg, #a0aec0, #718096);
+}
+
+#clear-session-btn:hover:not(:disabled) {
+    box-shadow: 0 8px 20px rgba(160, 174, 192, 0.3);
+}
+
 .results {
     background: #f7fafc;
     border-radius: 15px;

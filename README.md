@@ -7,6 +7,7 @@ A web-based scrum poker application for agile teams to estimate story points col
 - **Interactive Card Selection**: Choose from standard Fibonacci sequence cards (0, ½, 1, 2, 3, 5, 8, 13, 21) plus special cards (?, ☕)
 - **Team Management**: Add and remove team members dynamically
 - **Story Management**: Enter and track user stories being estimated
+- **Session Persistence**: Your current session (story, team, estimates) is automatically saved and restored on page refresh
 - **Results Analytics**: View average estimates and most common votes
 - **Responsive Design**: Works on desktop and mobile devices
 - **Keyboard Shortcuts**: 
@@ -23,6 +24,9 @@ A web-based scrum poker application for agile teams to estimate story points col
 5. Click "Reveal Cards" to see all estimates
 6. View the results and discussion outcomes
 7. Click "Reset Round" to start a new estimation
+8. Use "Clear Session" to completely reset all saved data
+
+**Note**: Your session is automatically saved, so you can refresh the page or close/reopen your browser without losing your current game state.
 
 ## Project Structure
 
