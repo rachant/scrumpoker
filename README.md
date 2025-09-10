@@ -1,12 +1,24 @@
-# Scrum Poker
+# Sc## Features
 
-A web-based scrum poker application for agile teams to estimate story points collaboratively.
+- **Interactive Card Selection**: Choose from standard Fibonacci sequence cards (0, ½, 1, 2, 3, 5, 8, 13, 21) plus special cards (?, ☕)
+- **Team Management**: Add and remove team members dynamically
+- **Story Management**: Enter and track user stories being estimated
+- **Session Sharing**: Share session URLs with your team for collaboration
+- **Session Persistence**: Your current session is automatically saved and persists across browser refreshes
+- **Results Analytics**: View average estimates and most common votes
+- **Responsive Design**: Works on desktop and mobile devices
+- **Real-time Sync**: Changes sync across browser tabs (simulated collaboration)
+- **Keyboard Shortcuts**: 
+  - Number keys (0-8) to select cards
+  - 'R' to reveal cards
+  - 'Escape' to reset round web-based scrum poker application for agile teams to estimate story points collaboratively.
 
 ## Features
 
 - **Interactive Card Selection**: Choose from standard Fibonacci sequence cards (0, ½, 1, 2, 3, 5, 8, 13, 21) plus special cards (?, ☕)
 - **Team Management**: Add and remove team members dynamically
 - **Story Management**: Enter and track user stories being estimated
+- **Session Persistence**: Your current session (story, team, estimates) is automatically saved and persisted permanently until manually cleared
 - **Results Analytics**: View average estimates and most common votes
 - **Responsive Design**: Works on desktop and mobile devices
 - **Keyboard Shortcuts**: 
@@ -16,13 +28,19 @@ A web-based scrum poker application for agile teams to estimate story points col
 
 ## Getting Started
 
-1. Open `index.html` in your web browser
-2. Enter a user story description in the text area
-3. Select your estimate by clicking on a card
-4. Add team members using the "Add Team Member" button
-5. Click "Reveal Cards" to see all estimates
-6. View the results and discussion outcomes
-7. Click "Reset Round" to start a new estimation
+### **🌐 Live Demo**
+Visit the live demo at: `https://rachanta.github.io/scrumpoker`
+
+### **🔗 Team Collaboration**
+1. **Create a session**: Visit the app and note your session ID
+2. **Share with team**: Click "Share Session" to copy the session URL
+3. **Team joins**: Share the URL with your team members
+4. **Collaborate**: Everyone sees the same session and updates in real-time
+
+### **📱 Local Development**
+1. Clone or download this repository
+2. Open `index.html` in your web browser
+3. Start estimating!
 
 ## Project Structure
 

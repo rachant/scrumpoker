@@ -1,14 +1,153 @@
+// Get session ID from URL parameter or use default
+const urlParams = new URLSearchParams(window.location.search);
+const SESSION_ID = urlParams.get('session') || 'team1';
+
 class ScrumPoker {
     constructor() {
         this.selectedCard = null;
         this.teamMembers = [{ name: 'You', estimate: null, isUser: true }];
         this.cardsRevealed = false;
+        this.currentStory = '';
+        this.sessionId = SESSION_ID;
         this.init();
     }
 
     init() {
+        this.loadSession();
         this.bindEvents();
         this.updateTeamDisplay();
+        this.updateStoryDisplay();
+        this.restoreCardSelection();
+        this.updateSessionInfo();
+        this.checkRevealButton();
+        this.updateShareLink();
+        
+        if (this.cardsRevealed) {
+            this.showResults();
+            document.getElementById('reveal-btn').disabled = true;
+        }
+
+        // Auto-sync every 2 seconds to simulate real-time collaboration
+        setInterval(() => this.syncSession(), 2000);
+    }
+
+    saveSession() {
+        const sessionData = {
+            selectedCard: this.selectedCard,
+            teamMembers: this.teamMembers,
+            cardsRevealed: this.cardsRevealed,
+            currentStory: this.currentStory,
+            lastUpdated: Date.now()
+        };
+        localStorage.setItem(`scrumPokerSession_${this.sessionId}`, JSON.stringify(sessionData));
+        this.updateSessionInfo();
+    }
+
+    loadSession() {
+        const savedSession = localStorage.getItem(`scrumPokerSession_${this.sessionId}`);
+        if (savedSession) {
+            try {
+                const sessionData = JSON.parse(savedSession);
+                this.selectedCard = sessionData.selectedCard;
+                this.teamMembers = sessionData.teamMembers || [{ name: 'You', estimate: null, isUser: true }];
+                this.cardsRevealed = sessionData.cardsRevealed || false;
+                this.currentStory = sessionData.currentStory || '';
+            } catch (error) {
+                console.log('Could not load saved session:', error);
+                this.clearSession();
+            }
+        }
+    }
+
+    syncSession() {
+        // Check if session was updated by another user in same browser
+        const savedSession = localStorage.getItem(`scrumPokerSession_${this.sessionId}`);
+        if (savedSession) {
+            try {
+                const sessionData = JSON.parse(savedSession);
+                const currentLastUpdated = sessionData.lastUpdated || 0;
+                
+                // If this is a newer update, sync the data
+                if (currentLastUpdated > (this.lastSyncTime || 0)) {
+                    this.lastSyncTime = currentLastUpdated;
+                    
+                    this.teamMembers = sessionData.teamMembers || this.teamMembers;
+                    this.cardsRevealed = sessionData.cardsRevealed || false;
+                    this.currentStory = sessionData.currentStory || '';
+                    
+                    this.updateTeamDisplay();
+                    this.updateStoryDisplay();
+                    this.checkRevealButton();
+                    
+                    if (this.cardsRevealed) {
+                        this.showResults();
+                        document.getElementById('reveal-btn').disabled = true;
+                    }
+                }
+            } catch (error) {
+                // Ignore sync errors
+            }
+        }
+    }
+
+    clearSession() {
+        localStorage.removeItem(`scrumPokerSession_${this.sessionId}`);
+    }
+
+    updateSessionInfo() {
+        const savedSession = localStorage.getItem(`scrumPokerSession_${this.sessionId}`);
+        const sessionInfoDiv = document.getElementById('session-info');
+        const lastSavedSpan = document.getElementById('last-saved');
+        const sessionIdSpan = document.getElementById('session-id');
+        
+        if (savedSession) {
+            try {
+                const sessionData = JSON.parse(savedSession);
+                const lastUpdated = new Date(sessionData.lastUpdated || Date.now());
+                lastSavedSpan.textContent = lastUpdated.toLocaleString();
+                sessionIdSpan.textContent = this.sessionId;
+                sessionInfoDiv.style.display = 'block';
+            } catch (error) {
+                sessionInfoDiv.style.display = 'none';
+            }
+        } else {
+            sessionIdSpan.textContent = this.sessionId;
+            lastSavedSpan.textContent = 'No data saved yet';
+            sessionInfoDiv.style.display = 'block';
+        }
+    }
+
+    updateShareLink() {
+        const shareUrlInput = document.getElementById('share-url');
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.set('session', this.sessionId);
+        shareUrlInput.value = currentUrl.toString();
+    }
+
+    shareSession() {
+        const shareUrl = document.getElementById('share-url').value;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Scrum Poker Session',
+                text: `Join our scrum poker session: ${this.sessionId}`,
+                url: shareUrl
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert('Session URL copied to clipboard! Share this with your team.');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Session URL copied to clipboard! Share this with your team.');
+            });
+        }
     }
 
     bindEvents() {
@@ -21,42 +160,33 @@ class ScrumPoker {
         document.getElementById('reveal-btn').addEventListener('click', () => this.revealCards());
         document.getElementById('reset-btn').addEventListener('click', () => this.resetRound());
         document.getElementById('add-member-btn').addEventListener('click', () => this.addTeamMember());
+        document.getElementById('clear-session-btn').addEventListener('click', () => this.clearSessionAndReset());
+        document.getElementById('share-btn').addEventListener('click', () => this.shareSession());
+
+        // Story description auto-save
+        document.getElementById('story-description').addEventListener('input', (e) => {
+            this.currentStory = e.target.value;
+            this.saveSession();
+        });
     }
 
     selectCard(cardElement) {
         if (this.cardsRevealed) return;
 
-        // Remove previous selection
-        document.querySelectorAll('.card').forEach(card => {
-            card.classList.remove('selected');
-        });
-
-        // Select new card
-        cardElement.classList.add('selected');
-        this.selectedCard = cardElement.dataset.value;
-
-        // Update user's estimate
+        this.selectedCard = cardElement.getAttribute('data-value');
         this.teamMembers[0].estimate = this.selectedCard;
         this.updateTeamDisplay();
-        this.checkRevealButton();
+        this.saveSession();
     }
 
-    addTeamMember() {
-        const name = prompt('Enter team member name:');
-        if (name && name.trim()) {
-            this.teamMembers.push({
-                name: name.trim(),
-                estimate: this.generateRandomEstimate(),
-                isUser: false
-            });
+    addMember() {
+        const memberName = prompt('Enter team member name:');
+        if (memberName) {
+            this.teamMembers.push({ name: memberName, estimate: null, isUser: false });
             this.updateTeamDisplay();
             this.checkRevealButton();
+            this.saveSession();
         }
-    }
-
-    generateRandomEstimate() {
-        const estimates = ['0', '0.5', '1', '2', '3', '5', '8', '13', '21', '?'];
-        return estimates[Math.floor(Math.random() * estimates.length)];
     }
 
     updateTeamDisplay() {
@@ -104,6 +234,7 @@ class ScrumPoker {
             this.teamMembers.splice(index, 1);
             this.updateTeamDisplay();
             this.checkRevealButton();
+            this.saveSession();
         }
     }
 
@@ -119,6 +250,7 @@ class ScrumPoker {
         this.showResults();
         
         document.getElementById('reveal-btn').disabled = true;
+        this.saveSession();
     }
 
     showResults() {
@@ -159,6 +291,60 @@ class ScrumPoker {
         return mostCommon;
     }
 
+    clearSession() {
+        localStorage.removeItem('scrumPokerSession');
+    }
+
+    clearSessionAndReset() {
+        const savedSession = localStorage.getItem('scrumPokerSession');
+        let confirmMessage = 'This will permanently clear all saved data and reset everything. Are you sure?';
+        
+        if (savedSession) {
+            try {
+                const sessionData = JSON.parse(savedSession);
+                const lastUpdated = new Date(sessionData.lastUpdated || Date.now());
+                confirmMessage += `\n\nLast saved: ${lastUpdated.toLocaleString()}`;
+                
+                if (sessionData.teamMembers && sessionData.teamMembers.length > 1) {
+                    confirmMessage += `\nTeam members: ${sessionData.teamMembers.length}`;
+                }
+                
+                if (sessionData.currentStory) {
+                    confirmMessage += `\nCurrent story: "${sessionData.currentStory.substring(0, 50)}${sessionData.currentStory.length > 50 ? '...' : ''}"`;
+                }
+            } catch (error) {
+                // If we can't parse the session, just use the basic message
+            }
+        }
+        
+        if (confirm(confirmMessage)) {
+            this.clearSession();
+            // Reset to initial state
+            this.selectedCard = null;
+            this.teamMembers = [{ name: 'You', estimate: null, isUser: true }];
+            this.cardsRevealed = false;
+            this.currentStory = '';
+            
+            // Update UI
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.getElementById('story-description').value = '';
+            document.getElementById('results').style.display = 'none';
+            
+            this.updateTeamDisplay();
+            this.checkRevealButton();
+            
+            // Hide session info
+            document.getElementById('session-info').style.display = 'none';
+            
+            // Show confirmation
+            setTimeout(() => {
+                alert('Session cleared successfully. All data has been permanently removed.');
+            }, 100);
+        }
+    }
+
     resetRound() {
         // Clear card selection
         document.querySelectorAll('.card').forEach(card => {
@@ -185,9 +371,31 @@ class ScrumPoker {
 
         // Clear story description
         document.getElementById('story-description').value = '';
+        this.currentStory = '';
+        
+        this.saveSession();
+    }
+
+    generateRandomEstimate() {
+        const estimates = ['0', '1', '2', '3', '5', '8'];
+        return estimates[Math.floor(Math.random() * estimates.length)];
+    }
+
+    updateStoryDisplay() {
+        document.getElementById('story-description').value = this.currentStory;
+    }
+
+    restoreCardSelection() {
+        if (this.selectedCard) {
+            const card = document.querySelector(`[data-value="${this.selectedCard}"]`);
+            if (card) {
+                card.classList.add('selected');
+            }
+        }
     }
 }
 
+// Initialize the application
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     new ScrumPoker();

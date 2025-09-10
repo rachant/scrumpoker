@@ -50,6 +50,25 @@
                 <button id="reveal-btn" disabled>Reveal Cards</button>
                 <button id="reset-btn">Reset Round</button>
                 <button id="add-member-btn">Add Team Member</button>
+                <button id="clear-session-btn">Clear Session</button>
+                <button id="share-btn">Share Session</button>
+            </div>
+
+            <div class="share-section">
+                <h3>Share with Your Team</h3>
+                <div class="share-input-group">
+                    <input type="text" id="share-url" readonly>
+                    <button id="copy-url" onclick="document.getElementById('share-btn').click()">Copy Link</button>
+                </div>
+            </div>
+
+            <div class="session-info" id="session-info" style="display: none;">
+                <small>Session saved: <span id="last-saved">-</span></small>
+            </div>
+
+            <div class="session-info" id="session-info" style="display: none;">
+                <p><strong>Session ID:</strong> <span id="session-id">-</span></p>
+                <p><strong>Last Updated:</strong> <span id="last-saved">-</span></p>
             </div>
 
             <div class="results" id="results" style="display: none;">
